@@ -44,6 +44,19 @@ and
     | DivExp of exp * exp
 
 
+(*---------Control Flow Graph--------*)
+
+type node = stmt * int * listSuccessors
+
+and
+
+listSuccessors = int list
+
+and
+
+controlFlowGraph = node list;;
+
+
 
 
 
