@@ -9,11 +9,10 @@ if(a)
 }
 else
 {
-    a = a + b;
+    a = a + 3;
 }
 b = 10;
 -------------- *)
-
 
 let a =  CompStmt( AssignStmt ("a", Const 10),
             CompStmt(
@@ -24,6 +23,67 @@ let a =  CompStmt( AssignStmt ("a", Const 10),
                 AssignStmt ("b", Const 10)
             )
 );;
+
+
+(* --------------
+a = 10
+if(a)
+{
+    b = 2;
+    c = 4;
+}
+else
+{
+    a = a + 3;
+}
+b = 10;
+-------------- *)
+
+
+let c =  CompStmt( AssignStmt ("a", Const 10),
+            CompStmt(
+                IfStmt (Var "a" ,
+                    CompStmt (AssignStmt("b", Const 2), AssignStmt("c", Const 4) ),
+                    AssignStmt("a", AddExp ( Var "a", Const 3))
+                ),
+                AssignStmt ("b", Const 10)
+            )
+);;
+
+(* --------------
+a = 10
+if(a)
+{
+    b = 2;
+    c = 4;
+}
+else
+{
+    a = a + 3;
+
+    if( b ){
+        c=7 
+        }
+        else
+        {
+            c=8
+        }
+    }
+}
+b = 10;
+-------------- *)
+
+
+let d =  CompStmt( AssignStmt ("a", Const 10),
+            CompStmt(
+                IfStmt (Var "a" ,
+                    CompStmt (AssignStmt("b", Const 2), AssignStmt("c", Const 4) ),
+                   CompStmt( AssignStmt("a", AddExp ( Var "a", Const 3)) , IfStmt(Var "b", AssignStmt ("c", Const 7),  AssignStmt ("c", Const 8) )    )
+                ),
+                AssignStmt ("b", Const 10)
+            )
+);;
+
 
 (* --------------
 a = 8;
@@ -36,7 +96,7 @@ while(a){
 c = a + b;
 -------------- *)
 
-let b = CompStmt ( 
+let b = CompStmt (
             AssignStmt ("a", Const 8),
             CompStmt (
                 AssignStmt ("b", Const 1),
@@ -45,12 +105,53 @@ let b = CompStmt (
                     CompStmt (
                         WhileStmt ( Var "a", CompStmt (
                             AssignStmt ("a", DiffExp (Var "a", Var "b") ),
-                            AssignStmt ("b", AddExp (Var "b", Const 1)) 
-                            )), 
+                            AssignStmt ("b", AddExp (Var "b", Const 1))
+                            )),
                         AssignStmt ("c", AddExp (Var("a"),Var("b") ))
                     )
                 )
             )
+);;
+
+
+
+(* --------------
+a = 8;
+
+if( d )
+{
+    while(a){
+        a = a - b;
+        b = b + 1;
+    }
+    c = a + b;
+}
+else
+{
+    while(a){
+        a = a - b;
+    }
+}
+printf a;
+-------------- *)
+
+let e = CompStmt (
+    AssignStmt( "a", Const 8),
+    CompStmt(
+        IfStmt(
+            Var "d",
+            CompStmt(
+                        WhileStmt(Var "a",
+                        CompStmt( AssignStmt ("a" , DiffExp( Var "a", Var "b")), AssignStmt ("b" , AddExp( Var "b", Var "1"))   )
+                ),
+                AssignStmt ("c" , AddExp( Var "a", Var "b"))
+
+            ),
+
+            WhileStmt( Var "a", AssignStmt( "a", DiffExp( Var "a", Var "b")))
+        ),
+        PrintStmt(Var "a")
+    )
 );;
 
 (* -----------------------------------Printing functions-------------------------------------- *)
@@ -59,18 +160,15 @@ let b = CompStmt (
 let printInt number =  Printf.printf "%d" number;;
 let printString text =  Printf.printf "%s" text;;
 
-let rec printExp givenExp = match givenExp with 
+let rec printExp givenExp = match givenExp with
     | Const (number) -> (printInt number)
     | Var (varName) -> (printString varName)
-    | AddExp (exp1, exp2) -> (printExp exp1); Printf.printf " + "; (printExp exp2) 
+    | AddExp (exp1, exp2) -> (printExp exp1); Printf.printf " + "; (printExp exp2)
     | DiffExp (exp1, exp2) -> (printExp exp1); Printf.printf " - "; (printExp exp2)
-    | MulExp (exp1, exp2) -> (printExp exp1); Printf.printf " * "; (printExp exp2) 
-    | DivExp (exp1, exp2) -> (printExp exp1); Printf.printf " / "; (printExp exp2) 
-
-
+    | MulExp (exp1, exp2) -> (printExp exp1); Printf.printf " * "; (printExp exp2)
+    | DivExp (exp1, exp2) -> (printExp exp1); Printf.printf " / "; (printExp exp2)
 
 let rec printStmt givenStmt = match givenStmt with
-    (* | _ ->  Printf.printf "%s " "stmt";; *)
     | CompStmt (stmt1, stmt2) -> (printStmt stmt1); (printStmt stmt2)
     | AssignStmt(varName, exp) -> (printString varName); Printf.printf " = "; (printExp exp)
     | PrintStmt (exp) -> Printf.printf "Print "; (printExp exp)
@@ -78,132 +176,133 @@ let rec printStmt givenStmt = match givenStmt with
     | WhileStmt(exp, stmt) -> Printf.printf "While ( "; (printExp exp); Printf.printf " ) {"; (printStmt stmt); Printf.printf " } " ;; *)
     | IfStmt (exp,stmt1,stmt2) -> Printf.printf " If( "; (printExp exp) ;  Printf.printf " ) "
     | WhileStmt(exp, stmt) -> Printf.printf "While ( "; (printExp exp); Printf.printf " ) ";;
- 
-let rec printSuccessors successors = match successors with 
+
+let rec printSuccessors successors = match successors with
     | h :: t -> Printf.printf "%d " h; (printSuccessors t)
     | [] -> Printf.printf "" ;;
-  
-let printNode givenNode = match givenNode with 
+
+let printNode givenNode = match givenNode with
         | (stmt, numberStmt, listSuccessors) -> Printf.printf "\n Statement: "; (printStmt stmt);
          Printf.printf "\n Statement Number: "; (printInt numberStmt);
          Printf.printf "\n Successors: "; (printSuccessors listSuccessors);;
 
-let rec printControlFlowGraph graph = match graph with 
+let rec printControlFlowGraph graph = match graph with
     | h :: t ->  Printf.printf " \n \t \t Node: ";  printNode h; printControlFlowGraph t;
     | [] ->  Printf.printf "\n-----------------------------";;
 
- 
 (* -----------------------------------Control Flow Graph-------------------------------------- *)
 
-
-
-
-       
-        (* | _ ->  [];; *)
-
-
-
-
-        (* | AssignStmt (varName, exp) -> let newList  = ( ( AssignStmt (varName, exp), 1, [] ) :: nodeList)  in  (let newList2 =  ( AssignStmt (varName, exp), 1, [] ):: newList in newList2) *)
-       
-       
-        (* | AssignStmt (varName, exp) -> let newList  = ( ( AssignStmt (varName, exp), 1, [] ) :: nodeList)  in  (let newList2 =  ( AssignStmt (varName, exp), 1, [] ):: newList in newList2) *)
-        (* | CompStmt ( stmt1, stmt2 ) -> ( stmt1, 1 , [] ):: nodeList; ( stmt2, 1 , [] ):: nodeList; nodeList *)
-
-        (* | AssignStmt (varName, exp) -> ( AssignStmt (varName, exp), 1, [] ):: nodeList; nodeList
-        | CompStmt ( stmt1, stmt2 ) -> ( stmt1, 1 , [] ):: nodeList; ( stmt2, 1 , [] ):: nodeList; nodeList *)
-
-        (* | CompStmt ( stmt1, stmt2 ) -> ( stmt1, nodeNumber , [nodeNumber + 1] ):: nodeList; ( stmt2, nodeNumber +1 , [] ):: nodeList; nodeList *)
-
-        
-
-
-let rec numberStatements program number =  match program with
-    | PrintStmt (exp) -> number + 1;
-    | AssignStmt (varName, exp) -> number + 1;
-    | CompStmt (stmt1, stmt2) -> number + (numberStatements stmt1 0) + (numberStatements stmt2 0)
-    | IfStmt (exp, stmt1, stmt2) -> number + (numberStatements stmt1 0) + (numberStatements stmt2 0)
-    | WhileStmt(exp, stmt) -> number + (numberStatements stmt 0);;
+let rec numberStatements program =  match program with
+    | PrintStmt (exp) -> 1;
+    | AssignStmt (varName, exp) -> 1;
+    | CompStmt (stmt1, stmt2) -> (numberStatements stmt1) + (numberStatements stmt2)
+    | IfStmt (exp, stmt1, stmt2) -> 1 + (numberStatements stmt1) + (numberStatements stmt2)
+    | WhileStmt(exp, stmt) -> 1 + (numberStatements stmt);;
 
 let rec generateListOfIds number = match number with
     | 0 -> []
     | _ -> number::(generateListOfIds (number - 1) )
 
 
-        (* if number = 0 then (generateListOfIds (number - 1) number::list ) else list *)
+let returnAndRemove list = match !list with
+    | h::t -> list:= t; h
+    | [] -> 0;;
 
 
+let append l1 l2 =
+  let rec loop acc l1 l2 =
+    match l1, l2 with
+    | [], [] -> List.rev acc
+    | [], h :: t -> loop (h :: acc) [] t
+    | h :: t, l -> loop (h :: acc) t l
+    in
+    loop [] l1 l2
 
 
+ let rec createList program nodeList nodeId successorNodes listOfIds = match program with
 
 
+        | PrintStmt (exp) -> if nodeId = 0 then  
+                            let newList1  = ( ( PrintStmt ( exp ), (returnAndRemove  listOfIds) , successorNodes ) :: nodeList) in newList1
+                            else 
+                            let newList1  = ( ( PrintStmt ( exp ), nodeId , successorNodes ) :: nodeList) in newList1
 
+        | AssignStmt (varName, exp) ->  if nodeId = 0 then  
+                                    let newList1  = ( ( AssignStmt (varName, exp), (returnAndRemove  listOfIds), successorNodes ) :: nodeList)  in newList1 
+                                    else
+                                    let newList1  = ( ( AssignStmt (varName, exp), nodeId, successorNodes ) :: nodeList)  in newList1 
 
- let rec createList program nodeList nodeNumber nodeNumberOfLoop = match program with 
-       
-        | PrintStmt (exp) -> let newList1  = ( ( PrintStmt ( exp), nodeNumber, [] ) :: nodeList) in newList1 
-        | AssignStmt (varName, exp) -> let newList1  = ( ( AssignStmt (varName, exp), nodeNumber, [] ) :: nodeList)  in newList1
-        
-        
-        
-        (* ??????????? *)
-        (* | IfStmt (exp,stmt1,stmt2) -> let newList1 = ( ( IfStmt (exp,stmt1,stmt2), nodeNumber, [nodeNumber + 1; nodeNumber + 2] ) :: nodeList)  in
-                                        (
-                                            let newList2 =  ( stmt1, nodeNumber + 1, [] ) :: newList1  in
-                                            (
-                                                let newList3 =  ( stmt2, nodeNumber + 2, [] ) :: newList2 in
-                                                    newList3
+        | CompStmt ( stmt1, stmt2 ) -> if nodeId = 0 then
+                                    let stmtId1 = (returnAndRemove  listOfIds) and  stmtId2 = (returnAndRemove  listOfIds)
+                                    in (
+                                        append (createList stmt1 nodeList stmtId1 [stmtId2] listOfIds) (createList stmt2 nodeList stmtId2 successorNodes listOfIds)
+                                    )
+                                 else
+                                  let  stmtId2 = (returnAndRemove  listOfIds)
+                                    in (
+                                        append (createList stmt1 nodeList nodeId [stmtId2] listOfIds) (createList stmt2 nodeList stmtId2 successorNodes listOfIds)
+                                    )
+        | IfStmt (exp,stmt1,stmt2) -> 
+                                        if nodeId = 0 then
+
+                                        let stmtId1 = (returnAndRemove  listOfIds) and  stmtId2 = (returnAndRemove  listOfIds)
+                                        in (
+                                            let newList =  ( ( IfStmt (exp, stmt1, stmt2),(returnAndRemove  listOfIds) , [stmtId1; stmtId2] ) :: nodeList )
+                                            in 
+                                               ( append (append newList  (createList stmt1 nodeList stmtId1 successorNodes listOfIds) ) (createList stmt2 nodeList stmtId2 successorNodes listOfIds) 
                                             )
-                                        ) *)
+                                        )
+                                        else
+                                          let stmtId1 = (returnAndRemove  listOfIds) and  stmtId2 = (returnAndRemove  listOfIds)
+                                        in (
+                                            let newList =  ( ( IfStmt (exp, stmt1, stmt2),nodeId , [stmtId1; stmtId2] ) :: nodeList )
+                                            in 
+                                               ( append (append newList  (createList stmt1 nodeList stmtId1 successorNodes listOfIds) ) (createList stmt2 nodeList stmtId2 successorNodes listOfIds) 
+                                            )
+                                        )
+        | WhileStmt (exp, stmt) ->   if nodeId = 0 then
 
-
-
-
-        (* | CompStmt ( stmt1, stmt2 ) -> let newList1  =  (stmt1, nodeNumber, [nodeNumber + 1] ) :: nodeList  in (let newList2 = (stmt2, nodeNumber + 1, [] ) :: newList1 in newList2) *)
-        
-        (* | CompStmt ( stmt1, stmt2 ) -> match stmt1, stmt2 with
-         let newList1  =  (stmt1, nodeNumber, [nodeNumber + 1] ) :: nodeList  in (let newList2 = (stmt2, nodeNumber + 1, [] ) :: newList1 in newList2)
-         *)
-
-         (* | WhileStmt (exp, stmt) -> let newList =  (WhileStmt (exp, stmt), nodeNumber, []) :: nodeList in newList :: (createList, newList, nodeNumber + 1,nodeNumber) *)
-        
-        
-        
-        
-        
-        | _ -> [] ;; 
-    
-let createControlFlowGraph program = List.rev (createList program [] 1 0);;
-    
-
-
-(* 
-let rec getLeastMaximumType program className1 className2 =
-    let superClassesList1  = (getOrderedSuperClasses program className1)
-        and superClassesList2  = (getOrderedSuperClasses program className2)
-    in (getLeastMaximumTypeFromLists superClassesList1 superClassesList2);; *)
-
+                                        let whileId = (returnAndRemove  listOfIds) and  stmtId = (returnAndRemove  listOfIds)
+                                        in (
+                                            let newList =  (( WhileStmt (exp, stmt) , whileId, [stmtId] ) :: nodeList )
+                                            in 
+                                               ( append newList  (createList stmt nodeList stmtId  ( whileId :: successorNodes ) listOfIds) )
+                                        )
+                                        else
+                                        
+                                        let stmtId = (returnAndRemove  listOfIds)
+                                        in (
+                                            let newList =  (( WhileStmt (exp, stmt) , nodeId, [stmtId] ) :: nodeList )
+                                            in 
+                                               ( append newList  (createList stmt nodeList stmtId  (nodeId::successorNodes) listOfIds) )
+                                        )
+let createControlFlowGraph program =
+ let ids = ref ( List.rev (generateListOfIds (numberStatements program))) in  createList program [] 0 [] ids;;
 
 (* -----------------------------------Samples-------------------------------------- *)
 
-(* printNode ( AssignStmt ("a", Const 2), 1, [2;3;4] );; *)
-
-(* Printf.printf "\n ************************************************************\n";;
-printNode ( a, 1, [2;3;4] )  ;; *)
-
 Printf.printf "\n ************************************************************ \n";;
-(* Printf.printf  " %s  \n" (createControlFlowGraph a);; *)
 
-(* 
-let test =  AssignStmt("b", Const 2);; 
-printControlFlowGraph (createControlFlowGraph test);; *)
+let test =  AssignStmt("b", Const 2);;
+printControlFlowGraph (createControlFlowGraph test);;
 
 
-let test2 =  CompStmt( AssignStmt("a", Const 1), AssignStmt("b", Const 2) );; 
+let test2 =  CompStmt(  AssignStmt("a", Const 1),  CompStmt(  AssignStmt("b", Const 2), AssignStmt("c", Const 3) ) );;
 printControlFlowGraph (createControlFlowGraph test2);;
 
-(* printSuccessors (generateListOfIds 10) *)
- 
+printControlFlowGraph (createControlFlowGraph a);;
+printControlFlowGraph (createControlFlowGraph c);;
+printControlFlowGraph (createControlFlowGraph d);;
+printControlFlowGraph (createControlFlowGraph b);;
+printControlFlowGraph (createControlFlowGraph e);;
+
+
+
+
+
+
+
+
 
 
 
